@@ -162,5 +162,4 @@ go run ./cmd/i41eu-usb launch -app "Embody Mode"
 
 MIT, see [LICENSE](LICENSE).
 
-Stack-chan (スタックチャン) is a registered trademark of Shinya Ishikawa; this project is
-independent and only made to work with [Stack-chan](https://github.com/stack-chan/stack-chan) robots.
+Stack-chan (スタックチャン) was created by Shinya Ishikawa and the Stack-chan community ([github.com/stack-chan/stack-chan](https://github.com/stack-chan/stack-chan)); this project is independent of it and of M5Stack.
