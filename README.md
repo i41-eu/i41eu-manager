@@ -30,7 +30,7 @@ accepting links) is not in this repository.
   computer is noticed (once the browser may use it) and gets a USB strip on its card: update
   firmware, write apps, permissions. **Find a robot on USB** (next to + Add a robot) opens the
   browser's port chooser on a computer the browser was not allowed it yet. User steps:
-  [SETUP.md](https://github.com/i41-eu/i41eu-embody/blob/main/firmware/main/apps/app_embody_mode/SETUP.md).
+  [SETUP.md](https://github.com/i41-eu/i41eu-StackChan/blob/embody/firmware/main/apps/app_embody_mode/SETUP.md).
 - **The robot's manager** ([manager-channel.md](https://github.com/i41-eu/i41eu-arch/blob/main/docs/manager-channel.md)):
   every robot set up here keeps a connection to this manager (`GET /robot`, its channel token).
   It reports its state live (which app, a question on its screen and the answer, not
@@ -55,7 +55,7 @@ accepting links) is not in this repository.
 
 | Piece | What it is | Needed? |
 |---|---|---|
-| **Robot** | a Stackchan with the [Embody Mode firmware](https://github.com/i41-eu/i41eu-embody/tree/main/firmware/main/apps/app_embody_mode). On its screen the **app switcher** (the QR screen: Next, Connect) lists its apps and switches between them; its gear opens the **Manager screen** (which manager it has, turn it off or on). | yes |
+| **Robot** | a Stackchan with the [Embody Mode firmware](https://github.com/i41-eu/i41eu-StackChan/tree/embody/firmware/main/apps/app_embody_mode). On its screen the **app switcher** (the QR screen: Next, Connect) lists its apps and switches between them; its gear opens the **Manager screen** (which manager it has, turn it off or on). | yes |
 | **Apps** | what the robot does, one at a time. Each app is a web service: the robot connects to it, and a phone or browser opens its web page. The apps online: [s.i41.eu](https://s.i41.eu/#apps) | at least one |
 | **Phone or browser** | opens an app's page and pairs with the robot by scanning its QR code; with end-to-end encryption only paired browsers can read the robot | to use an app |
 | **Manager** | this repo: the web service that sets robots up over USB, gives each robot its own token per app, and switches and changes apps from its page | optional: without it, apps are written over USB and switched on the robot's app switcher |

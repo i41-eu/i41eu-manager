@@ -40,7 +40,7 @@ func main() {
 		tlsKey      = flag.String("tls-key", defaultConfigFile("tls-key.pem"), "TLS key for -tls-listen")
 		firmwareDir = flag.String("firmware-dir", "", "the official Embody Mode firmware (manifest.json and its parts) from this directory instead of GitHub")
 		signingKey  = flag.String("signing-key-file", defaultConfigFile("signing-key.pem"), "P-256 key that signs robots' app lists, so their apps can be changed here without USB; created if missing (\"\" = only over USB)")
-		firmwareRel = flag.String("firmware-release", "latest", "else from this GitHub release of i41eu-embody: latest, a tag (embody-v…), or \"\" for none")
+		firmwareRel = flag.String("firmware-release", "latest", "else from this GitHub release of i41eu-StackChan: latest, a tag (embody-v…), or \"\" for none")
 		name        = flag.String("name", "", "this manager's name for people and robots (default \"home on <this computer>\")")
 		robotURL    = flag.String("robot-url", "", "where robots open their manager channel (default: ws://<this computer's LAN address>/robot, or ws(s)://<public host>/robot with -public-url)")
 		pageURL     = flag.String("page-url", "", "this page's address shown on the robot's Manager screen (default: this computer's LAN address, or the public URL with -public-url)")

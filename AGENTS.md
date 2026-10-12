@@ -7,5 +7,5 @@ apps, and the link up to an upstream manager (e.g. m.i41.eu). See [README.md](RE
 
 - Go only: the standard library, gorilla/websocket, go.bug.st/serial (`i41eu-usb`), and q41eu-raw's `statestore` (Postgres through pgx).
 - Apps (e.g. q41eu-raw) call `POST /api/robot-auth`; change it together with their client (`internal/server/manager.go` in q41eu-raw).
-- The setup page talks to the robot with the USB setup protocol of the firmware (`usb_setup.h` in i41eu-embody).
+- The setup page talks to the robot with the USB setup protocol of the firmware (`usb_setup.h` in i41eu-StackChan).
 - Before committing, run `gofmt -l .`, `go vet ./...` and `go test -race ./...`.

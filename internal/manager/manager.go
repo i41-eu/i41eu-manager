@@ -183,7 +183,7 @@ func New(cfg Config) (*Manager, error) {
 	m := &Manager{cfg: cfg, log: cfg.Log, robots: map[string]*Robot{}, conns: map[string]*robotConn{},
 		linkWake: make(chan struct{}, 1), saveNow: make(chan struct{}, 1)}
 	if cfg.FirmwareDir == "" && cfg.FirmwareRelease != "" {
-		m.firmware = newFirmwareRelease("https://github.com/i41-eu/i41eu-embody/releases", cfg.FirmwareRelease, cfg.FirmwareCacheDir)
+		m.firmware = newFirmwareRelease("https://github.com/i41-eu/i41eu-StackChan/releases", cfg.FirmwareRelease, cfg.FirmwareCacheDir)
 	}
 	if cfg.AppsFile != "" {
 		apps, err := LoadApps(cfg.AppsFile)

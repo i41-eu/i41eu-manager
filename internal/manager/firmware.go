@@ -17,7 +17,7 @@ import (
 // The official Embody Mode firmware for the setup over USB, fetched from its GitHub release when no
 // -firmware-dir is given: the manifest (re-read every 10 minutes for "latest") and its parts,
 // each checked against the manifest's SHA-256 and cached on disk by that hash.
-const firmwareReleases = "https://github.com/i41-eu/i41eu-embody/releases"
+const firmwareReleases = "https://github.com/i41-eu/i41eu-StackChan/releases"
 
 type firmwareManifest struct {
 	Version string `json:"version"`
@@ -29,7 +29,7 @@ type firmwareManifest struct {
 }
 
 type firmwareRelease struct {
-	base     string // e.g. https://github.com/i41-eu/i41eu-embody/releases
+	base     string // e.g. https://github.com/i41-eu/i41eu-StackChan/releases
 	release  string // "latest" or a tag, e.g. "embody-v0.1.0"
 	cacheDir string
 	client   *http.Client
