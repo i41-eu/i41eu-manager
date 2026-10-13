@@ -184,6 +184,7 @@ function render() {
   const cards = robots.map((r) => r.id === keep ? $("robot-" + r.id) : robotCard(r, robotCtx(r)));
   $("robots").replaceChildren(...cards);
   $("link").replaceChildren(...(me.link ? [linkCard(me.link)] : []));
+  $("find").hidden = !usb.supported() || me.phone;
 }
 
 const appsByID = () => Object.fromEntries((me.apps || []).map((a) => [a.id, a]));
@@ -199,6 +200,13 @@ function linkCard(l) {
   const share = el("input", { type: "checkbox", checked: !!l.share_local });
   const opts = [el("label", { className: "check" }, [full, `${l.upstream} may change the robots too (it asks; this manager signs; each change is in the robot's history)`]),
     el("label", { className: "check" }, [share, `Show this manager's local address there (for "Manage at home")`])];
+  if (me.phone) { // the link is the computer's: phones see it, the computer's page changes it
+    card.append(el("h2", { textContent: "From anywhere", style: "margin-top:0" }),
+      el("p", { className: "muted small", textContent: l.linked
+        ? `This home is linked to ${l.upstream}` + (l.mode === "full" ? ", which may change the robots." : ", read-only.") + " Change it on the computer this manager runs on."
+        : `Link this home to ${l.upstream} on the computer this manager runs on.` }));
+    return card;
+  }
   if (!l.linked) {
     const go = el("button", { textContent: `Link to ${l.upstream}` });
     go.onclick = () => act(async () => {
@@ -443,8 +451,8 @@ function newRobotCard() {
   const card = el("section", { className: "card", id: "robot-new" });
   const first = !(me.robots || []).length;
   card.append(el("h1", { textContent: first ? "Set up your robot" : "Add a robot" }));
-  if (!usb.supported()) {
-    card.append(el("p", { className: "warn", textContent: "Setting a robot up needs Chrome or Edge on a computer (USB from the browser); not a phone." }));
+  if (!usb.supported() || me.phone) {
+    card.append(el("p", { className: "warn", textContent: "Setting a robot up needs Chrome or Edge on the computer this manager runs on (USB from the browser); not a phone." }));
     return card;
   }
   const u = unknownPort;
@@ -674,7 +682,7 @@ function restorePanel(panel, r) {
 // --- noticing a robot on the cable --------------------------------------------------------------
 
 async function probe() {
-  if (busy || !usb.supported() || !me.signed_in) return;
+  if (busy || !usb.supported() || !me.signed_in || me.phone) return;
   const ports = await usb.knownPorts();
   const mine = new Set((me.robots || []).map((r) => r.id));
   plugged.clear();

@@ -544,14 +544,15 @@ func (m *Manager) handleMe(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/my/robots/{id}/setup {"apps": ["raw", "pet"], "start": "pet"}: add the robot (or
 // update one of yours), approve these apps, and get what the setup page writes into the robot:
-// each app with a new token (the old ones stop working) and the one it starts with.
+// each app with a new token (the old ones stop working) and the one it starts with. Only on this
+// computer: a robot is set up over its USB cable, and the answer holds every token of the robot.
 func (m *Manager) handleRobotSetup(w http.ResponseWriter, r *http.Request) {
 	if !sameOrigin(r) {
 		http.Error(w, "cross-origin request refused", http.StatusForbidden)
 		return
 	}
-	if !m.owner(w, r) {
-		http.Error(w, "sign in first", http.StatusUnauthorized)
+	if !isLocal(r) {
+		http.Error(w, "only on the computer this manager runs on", http.StatusForbidden)
 		return
 	}
 	id := strings.ToLower(strings.TrimSpace(r.PathValue("id")))

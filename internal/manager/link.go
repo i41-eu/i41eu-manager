@@ -527,6 +527,11 @@ func (m *Manager) handleLinkStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m.mu.Lock()
+	if m.linkSt.Token != "" {
+		m.mu.Unlock()
+		http.Error(w, "this home is linked already: unlink it first", http.StatusConflict)
+		return
+	}
 	m.linkSt.Pending, m.linkSt.PendingMode, m.linkSt.PendingShare = randHex(16), req.Mode, req.ShareLocal
 	state := m.linkSt.Pending
 	m.requestSave()
@@ -541,8 +546,8 @@ func (m *Manager) handleLinkDone(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	if !m.owner(w, r) {
-		http.Error(w, "only on this computer", http.StatusForbidden)
+	if !isLocal(r) {
+		http.Error(w, "only on the computer this manager runs on", http.StatusForbidden)
 		return
 	}
 	code, state := r.URL.Query().Get("code"), r.URL.Query().Get("state")
@@ -617,16 +622,17 @@ func (m *Manager) handleUnlink(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// homeOwner checks a home-side link request: a home manager with an upstream, the local owner,
-// same origin. It answers the request when not.
+// homeOwner checks a home-side link request: a home manager with an upstream, the page on this
+// computer (not a phone: the link is the computer's, and outlasts a phone's sign-in), same origin.
+// It answers the request when not.
 func (m *Manager) homeOwner(w http.ResponseWriter, r *http.Request) bool {
-	switch ok := m.owner(w, r); {
+	switch {
 	case m.cfg.UpstreamURL == "":
 		http.NotFound(w, r)
 	case !sameOrigin(r):
 		http.Error(w, "cross-origin request refused", http.StatusForbidden)
-	case !ok:
-		http.Error(w, "sign in first", http.StatusUnauthorized)
+	case !isLocal(r):
+		http.Error(w, "only on the computer this manager runs on", http.StatusForbidden)
 	default:
 		return true
 	}
