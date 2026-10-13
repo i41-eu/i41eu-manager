@@ -178,7 +178,7 @@ function render() {
   if (!((busy || keepPanel) && openPanel?.id === "new")) {
     const showNew = !robots.length || openPanel?.id === "new" || unknownPort;
     $("newrobot").replaceChildren(...(showNew ? [newRobotCard()] : []));
-    $("addrow").hidden = showNew;
+    $("addrow").hidden = showNew || !usb.supported() || me.phone; // a robot is added over USB: not here
   }
   const keep = busy || keepPanel ? openPanel?.id : null;
   const cards = robots.map((r) => r.id === keep ? $("robot-" + r.id) : robotCard(r, robotCtx(r)));

@@ -118,7 +118,11 @@ func startChrome(t *testing.T, robot map[string]string) *chrome {
 	}
 	cfg, _ := json.Marshal(robot)
 	c.call("Page.enable", nil)
-	c.call("Page.addScriptToEvaluateOnNewDocument", map[string]any{"source": "window.__fakeRobot = " + string(cfg) + ";\n" + string(fake)})
+	if robot == nil { // a browser without Web Serial (a phone, Firefox, Safari)
+		c.call("Page.addScriptToEvaluateOnNewDocument", map[string]any{"source": "delete Navigator.prototype.serial;"})
+	} else {
+		c.call("Page.addScriptToEvaluateOnNewDocument", map[string]any{"source": "window.__fakeRobot = " + string(cfg) + ";\n" + string(fake)})
+	}
 	c.call("Emulation.setDeviceMetricsOverride", map[string]any{"width": 620, "height": 1500, "deviceScaleFactor": 1, "mobile": false})
 	return c
 }
@@ -562,6 +566,23 @@ func TestSwitchQuestionAndRestart(t *testing.T) {
 	if s := r.Snapshot(); s.Restarts != 1 {
 		t.Errorf("restarts: %d", s.Restarts)
 	}
+}
+
+// In a browser without Web Serial (a phone, Firefox, Safari) the page does not offer to add a robot
+// (it is done over USB), and it stays live: nothing it offers there stops its refresh.
+func TestNoAddWithoutUSB(t *testing.T) {
+	ts, _ := newManager(t, false)
+	r := setUpSim(t, ts, robotID, `{"apps":["raw","pet"],"start":"raw"}`)
+	c := startChrome(t, nil)
+	c.open(ts.URL + "/")
+	card := `document.getElementById("robot-` + robotID + `")`
+	c.waitFor(card + `?.textContent.includes("connected · on Raw data")`)
+	if c.str(`String(document.getElementById("addrow").hidden)`) != "true" {
+		c.shot("add-offered")
+		t.Fatal(`"+ Add a robot" offered without Web Serial`)
+	}
+	r.SwitchOnScreen("wss://pet.example")
+	c.waitFor(card + `?.textContent.includes("connected · on Pet")`)
 }
 
 // homePair is a home manager with an upstream it may link to (upstreamsim, both on loopback),
