@@ -42,7 +42,10 @@ func (m *Manager) pageCodeLocked(rb *Robot, c *robotConn, hello bool) {
 
 // phoneSession: the browser is a phone signed in at a robot.
 func (m *Manager) phoneSession(w http.ResponseWriter, r *http.Request) bool {
-	s := m.session(w, r)
+	s := cookieSession(r)
+	if s == "" {
+		return false
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	_, ok := m.phones[s]
@@ -52,7 +55,7 @@ func (m *Manager) phoneSession(w http.ResponseWriter, r *http.Request) bool {
 // GET /phone?code=…: a phone scanned a robot's Manager screen.
 func (m *Manager) handlePhone(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
-	session := m.session(w, r)
+	old := cookieSession(r)
 	m.mu.Lock()
 	var rb *Robot
 	for id, pc := range m.pageCodes {
@@ -65,6 +68,8 @@ func (m *Manager) handlePhone(w http.ResponseWriter, r *http.Request) {
 		if m.phones == nil {
 			m.phones = map[string]time.Time{}
 		}
+		delete(m.phones, old)         // a phone signing in again gets a new id
+		session := m.newSession(w, r) // made here: an id the browser came with never signs in
 		m.phones[session] = time.Now().UTC().Truncate(time.Second)
 		m.noteLocked(rb, "robot", "a phone signed in to this manager at the robot")
 		if c := m.conns[rb.ID]; c != nil {
@@ -88,13 +93,14 @@ func (m *Manager) handleLogout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cross-origin request refused", http.StatusForbidden)
 		return
 	}
-	session := m.session(w, r)
+	session := cookieSession(r)
 	m.mu.Lock()
-	if _, ok := m.phones[session]; ok {
+	if _, ok := m.phones[session]; ok && session != "" {
 		delete(m.phones, session)
 		m.requestSave()
 	}
 	m.mu.Unlock()
+	m.endSession(w, r)
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -301,17 +301,32 @@ func (m *Manager) Handler() http.Handler {
 
 // --- sessions and the owner -------------------------------------------------------------------
 
-func (m *Manager) session(w http.ResponseWriter, r *http.Request) string {
+// cookieSession is the session id the browser sends, "" if none. Only a phone's sign-in makes one
+// (newSession), so an id the manager does not know is no one's: nobody can choose the id their
+// sign-in will have.
+func cookieSession(r *http.Request) string {
 	if c, err := r.Cookie(sessionCookie); err == nil && len(c.Value) == 64 {
 		if _, err := hex.DecodeString(c.Value); err == nil {
 			return c.Value
 		}
 	}
+	return ""
+}
+
+// newSession gives the browser a new session id, made here.
+func (m *Manager) newSession(w http.ResponseWriter, r *http.Request) string {
 	id := randHex(32)
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: id, Path: "/", MaxAge: 365 * 24 * 3600,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode,
 		Secure: r.TLS != nil || strings.HasPrefix(m.cfg.PublicURL, "https://")})
 	return id
+}
+
+// endSession tells the browser to forget its session id.
+func (m *Manager) endSession(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1,
+		HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		Secure: r.TLS != nil || strings.HasPrefix(m.cfg.PublicURL, "https://")})
 }
 
 // localOwner owns every robot added here: whoever uses the page on the manager's own computer
@@ -367,7 +382,6 @@ func (m *Manager) handleUSBScript(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Manager) servePage(w http.ResponseWriter, r *http.Request, name string) {
-	m.session(w, r)
 	page, err := uiFS.ReadFile("ui/" + name)
 	if m.cfg.UIDir != "" {
 		page, err = os.ReadFile(filepath.Join(m.cfg.UIDir, name))
