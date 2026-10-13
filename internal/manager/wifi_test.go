@@ -1,9 +1,12 @@
 package manager
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestIsLocal(t *testing.T) {
@@ -26,6 +29,45 @@ func TestIsLocal(t *testing.T) {
 		if got := isLocal(r); got != c.want {
 			t.Errorf("%s: isLocal = %v, want %v", c.name, got, c.want)
 		}
+	}
+}
+
+// /api/me gives the computer's Wi-Fi (with its password) to the page on this computer only: not to
+// a phone signed in at a robot, nor to anyone else on the network.
+func TestMeWifiOnlyForThisComputer(t *testing.T) {
+	saved := currentWifi
+	currentWifi = func() hostWifi { return hostWifi{SSID: "Home Net", Password: "home-net-pass"} }
+	t.Cleanup(func() { currentWifi = saved })
+	m := newManager(t, Config{AppsFile: catalog(t)})
+	h := m.Handler()
+
+	if code, body := call(t, h, "GET", "/api/me", "", ""); code != http.StatusOK ||
+		!strings.Contains(body, `"wifi":{"ssid":"Home Net","password":"home-net-pass"}`) {
+		t.Fatalf("the page on this computer: %d %s", code, body)
+	}
+
+	phone := strings.Repeat("7", 64)
+	m.mu.Lock()
+	m.phones = map[string]time.Time{phone: time.Now()}
+	m.mu.Unlock()
+	fromLAN := func(session string) string {
+		r := httptest.NewRequest("GET", "/api/me", nil)
+		r.RemoteAddr, r.Host = "192.168.1.20:5000", "192.168.1.10:8790"
+		if session != "" {
+			r.AddCookie(&http.Cookie{Name: sessionCookie, Value: session})
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != http.StatusOK {
+			t.Fatalf("/api/me from the network: %d", w.Code)
+		}
+		return w.Body.String()
+	}
+	if body := fromLAN(phone); !strings.Contains(body, `"phone":true`) || strings.Contains(body, `"wifi"`) || strings.Contains(body, "home-net-pass") {
+		t.Fatalf("a phone signed in at a robot: %s", body)
+	}
+	if body := fromLAN(""); !strings.Contains(body, `"signed_in":false`) || strings.Contains(body, "home-net-pass") {
+		t.Fatalf("another computer on the network: %s", body)
 	}
 }
 

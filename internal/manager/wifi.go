@@ -24,7 +24,10 @@ func run(name string, args ...string) (string, error) {
 	return string(out), err
 }
 
-func currentWifi() hostWifi {
+// currentWifi is the Wi-Fi this computer is on (a variable: the tests stand in for the system).
+var currentWifi = systemWifi
+
+func systemWifi() hostWifi {
 	switch runtime.GOOS {
 	case "linux":
 		out, err := run("nmcli", "-t", "-f", "NAME,TYPE,DEVICE", "connection", "show", "--active")

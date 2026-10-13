@@ -532,8 +532,12 @@ func (m *Manager) handleMe(w http.ResponseWriter, r *http.Request) {
 	me["phone"] = !isLocal(r)
 	me["robots"] = robots
 	me["remote_apps"] = m.signer != nil // apps can be managed from here (if the robot allows it)
-	if wifi := currentWifi(); wifi.SSID != "" {
-		me["wifi"] = wifi // the page on this computer may fill in the Wi-Fi it is on
+	// The page on this computer may fill in the Wi-Fi it is on. Only that page: a phone signed in
+	// at a robot is an owner too, but the computer's Wi-Fi password is not the phone's to read.
+	if isLocal(r) {
+		if wifi := currentWifi(); wifi.SSID != "" {
+			me["wifi"] = wifi
+		}
 	}
 	writeJSON(w, http.StatusOK, me)
 }
