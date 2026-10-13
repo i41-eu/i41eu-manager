@@ -118,7 +118,7 @@ the `url` with `http://` or `https://`. The app gets the same secret (e.g. q41eu
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/me` | this manager's name, the catalog (a linked home also lists m.i41.eu's apps as `up:<id>`), the link; for this computer or a signed-in phone: the robots with their live state (online, `last_app`, `question`, `answer`, `stuck`, paired browsers) and this computer's Wi-Fi |
+| `GET /api/me` | this manager's name, the catalog (a linked home also lists m.i41.eu's apps as `up:<id>`), the link; for this computer or a signed-in phone: the robots with their live state (online, `last_app`, `question`, `answer`, `stuck`, paired browsers) |
 | `POST /api/my/robots/{id}/setup` | `{"apps", "start", "remote_apps", "ask_pin", "second"}`: add the robot (or update it) and get what the USB setup writes (`servers` with their tokens, `start`, `manager`, `manager2`?); new tokens each time; `second`: the linked m.i41.eu as the robot's second manager |
 | `POST /api/my/robots/{id}/apps` | `{"apps", "start"}`: change the apps (robots set up with remote changes allowed): a signed `Apps` on its channel |
 | `POST /api/my/robots/{id}/switch` | `{"app"}`: a signed `Switch`; the robot asks on its screen with `ask_pin` |
