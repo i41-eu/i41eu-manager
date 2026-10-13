@@ -247,11 +247,22 @@ func (m *Manager) homeHandle(kind string, body json.RawMessage) {
 		}
 	case "Granted", "StandbyGranted":
 		var b struct {
-			ID string `json:"id"`
+			ID, Robot, App string
 		}
 		json.Unmarshal(body, &b)
 		if kind == "Granted" {
-			m.homeGranted(body)
+			m.mu.Lock()
+			g, asked := m.grants[b.ID]
+			asked = asked && g.robot == b.Robot && g.app == b.App
+			if asked {
+				delete(m.grants, b.ID)
+			}
+			m.mu.Unlock()
+			if asked {
+				m.homeGranted(body)
+			} else {
+				m.log.Warn("a grant this home did not ask for, ignored", "robot", b.Robot, "app", b.App)
+			}
 		}
 		m.answerWaiter(b.ID, body)
 	case "Pairings":
@@ -416,6 +427,9 @@ func (m *Manager) upstreamOfferedLocked(id string) bool {
 	return m.link != nil && slices.ContainsFunc(m.linkSt.Catalog, func(a upCatalogApp) bool { return a.ID == id })
 }
 
+// upGrant is a Grant this home asked of the upstream manager: only its answer is applied.
+type upGrant struct{ robot, app string }
+
 // setUpstreamAppsLocked makes the robot's linked apps these: removed ones are revoked, new ones
 // asked for (Grant). Returns true when it waits for grants: the app list goes to the robot when
 // they come (homeGranted). m.mu held.
@@ -424,6 +438,7 @@ func (m *Manager) setUpstreamAppsLocked(rb *Robot, want []string) bool {
 		if !slices.Contains(want, id) {
 			delete(rb.Upstream, id)
 			delete(rb.Pairings, upstreamKey(id))
+			m.forgetGrantsLocked(rb.ID, id)
 			if m.link != nil {
 				m.link.sendMsg("Revoke", map[string]any{"robot": rb.ID, "app": id})
 			}
@@ -433,11 +448,25 @@ func (m *Manager) setUpstreamAppsLocked(rb *Robot, want []string) bool {
 	for _, id := range want {
 		if rb.Upstream[id] == nil && m.link != nil {
 			wid, _ := m.newWaiterLocked() // answered by homeGranted; nobody waits on the channel
+			if m.grants == nil {
+				m.grants = map[string]upGrant{}
+			}
+			m.grants[wid] = upGrant{robot: rb.ID, app: id}
 			m.link.sendMsg("Grant", map[string]any{"id": wid, "robot": rb.ID, "app": id})
 			waiting = true
 		}
 	}
 	return waiting
+}
+
+// forgetGrantsLocked drops the Grants still asked for one robot's app (it was removed, or the
+// robot is gone). m.mu held.
+func (m *Manager) forgetGrantsLocked(robot, app string) {
+	for id, g := range m.grants {
+		if g.robot == robot && (app == "" || g.app == app) {
+			delete(m.grants, id)
+		}
+	}
 }
 
 // homeGranted stores a token m.i41.eu issued for one of the home's robots and sends the robot
@@ -455,6 +484,10 @@ func (m *Manager) homeGranted(body json.RawMessage) {
 	defer m.mu.Unlock()
 	rb := m.robots[b.Robot]
 	if rb == nil {
+		return
+	}
+	if rb.Upstream[b.App] != nil { // a grant adds an app; it never changes one the robot has
+		m.log.Warn("a grant for an app the robot has already, ignored", "robot", b.Robot, "app", b.App)
 		return
 	}
 	if rb.Upstream == nil {

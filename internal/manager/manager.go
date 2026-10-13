@@ -168,6 +168,7 @@ type Manager struct {
 	linkWake  chan struct{}         // a new link token: dial now
 	waiters   map[string]linkWaiter // link requests waiting for their answer
 	phones    map[string]time.Time  // session -> signed in at a robot (phone.go)
+	grants    map[string]upGrant    // waiter id -> a Grant asked of the upstream manager (link.go)
 	pageCodes map[string]pageCode   // robot id -> the code its Manager screen shows (phone.go)
 
 	saveNow   chan struct{}
@@ -724,6 +725,7 @@ func (m *Manager) handleRemoveRobot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	delete(m.robots, rb.ID)
+	m.forgetGrantsLocked(rb.ID, "")
 	m.mu.Unlock()
 	m.requestSave()
 	m.log.Info("robot removed", "robot", rb.ID)
